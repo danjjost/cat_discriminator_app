@@ -1,5 +1,8 @@
 {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "files.autoSave": "afterDelay"
+    "files.autoSave": "afterDelay",
+    "[dotenv]": {
+        "editor.defaultFormatter": "foxundermoon.shell-format"
+    }
 }

@@ -1,37 +1,33 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PhotoMode, PhotoModeToggle } from "./PhotoModeToggle";
 import { CameraView } from "expo-camera";
-import { Pressable, View, StyleSheet, Text } from "react-native";
+import { StyleSheet } from "react-native";
+import { CameraControls } from "./CameraControls";
+import { TrainingCategory } from "./TrainingCategory";
 
 export const Camera = () => {
-  const [mode, setMode] = useState(PhotoMode.Scanning);
-  const [trainingType, setTrainingType] = useState(TrainingType.Captain);
+  const [mode, setMode] = useState(PhotoMode.Training);
+  const [trainingType, setTrainingType] = useState(TrainingCategory.Control);
+  const cameraRef = useRef<CameraView>(null);
 
   const togglePhotoMode = () => {
-    setMode((currentMode) =>
-      currentMode === PhotoMode.Scanning
-        ? PhotoMode.Training
-        : PhotoMode.Scanning
-    );
+    setMode((currentMode) => getNextPhotoMode(currentMode));
   };
 
   const toggleTrainingType = () => {
-    setTrainingType((currentType) => {
-      switch (currentType) {
-        case TrainingType.Captain:
-          return TrainingType.BathroomCat;
-        case TrainingType.BathroomCat:
-          return TrainingType.Control;
-        case TrainingType.Control:
-          return TrainingType.Captain;
-      }
-    });
+    setTrainingType((currentType) => getNextTrainingType(currentType));
   };
 
   return (
-    <CameraView style={styles.camera} facing={"back"}>
+    <CameraView
+      mute={true}
+      style={styles.camera}
+      facing={"back"}
+      ref={cameraRef}
+    >
       <PhotoModeToggle currentMode={mode} togglePhotoMode={togglePhotoMode} />
       <CameraControls
+        cameraRef={cameraRef}
         photoMode={mode}
         trainingType={trainingType}
         toggleTrainingType={toggleTrainingType}
@@ -40,76 +36,25 @@ export const Camera = () => {
   );
 };
 
-enum TrainingType {
-  Captain,
-  BathroomCat,
-  Control,
-}
-
-interface ICameraControlProps {
-  photoMode: PhotoMode;
-  trainingType: TrainingType;
-  toggleTrainingType: () => void;
-}
-
-function CameraControls(p: ICameraControlProps) {
-  const getTrainingType = () => {
-    if (p.photoMode != PhotoMode.Training) return "         ";
-
-    switch (p.trainingType) {
-      case TrainingType.Captain:
-        return "Captain 😻";
-      case TrainingType.BathroomCat:
-        return "Bathroom Cat 😾";
-      case TrainingType.Control:
-        return "Control 🪑";
-    }
-  };
-
-  return (
-    <View style={styles.buttonContainer}>
-      <Pressable style={styles.button} onPress={p.toggleTrainingType}>
-        <Text style={styles.text}>{getTrainingType()}</Text>
-      </Pressable>
-      <Pressable style={styles.shutterButton}>
-        <Text style={styles.shutterButtonText}>{" 📸 "}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  buttonContainer: {
-    flexDirection: "row",
-    backgroundColor: "transparent",
-    alignContent: "space-around",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    justifyContent: "space-around",
-    paddingBottom: 50,
-  },
-  shutterButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.75)",
-    borderRadius: 100,
-    padding: 25,
-    alignSelf: "center",
-    alignItems: "center",
-  },
-  shutterButtonText: {
-    fontSize: 50,
-    marginBottom: 10,
-  },
-  button: {
-    alignSelf: "center",
-    alignItems: "center",
-  },
   camera: {
     flex: 1,
   },
-  text: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-  },
 });
+
+const getNextTrainingType = (currentType: TrainingCategory) => {
+  switch (currentType) {
+    case TrainingCategory.Captain:
+      return TrainingCategory.BathroomCat;
+    case TrainingCategory.BathroomCat:
+      return TrainingCategory.Control;
+    case TrainingCategory.Control:
+      return TrainingCategory.Captain;
+  }
+};
+
+const getNextPhotoMode = (currentMode: PhotoMode): PhotoMode => {
+  return currentMode === PhotoMode.Scanning
+    ? PhotoMode.Training
+    : PhotoMode.Scanning;
+};
