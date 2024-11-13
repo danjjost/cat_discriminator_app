@@ -1,20 +1,20 @@
 import {
   CameraPictureOptions,
-  ImageType,
-} from "expo-camera/build/legacy/Camera.types";
+} from "expo-camera";
 import { PhotoMode } from "./PhotoModeToggle";
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import Toast from "react-native-root-toast";
 import { SavePhotoClient } from "./SavePhotoClient";
 import { TrainingCategory } from "./TrainingCategory";
 import { CameraView } from "expo-camera";
+import "setimmediate";
 
 const CAMERA_PICTURE_OPTIONS: CameraPictureOptions = {
   quality: 0.25,
   base64: true,
   skipProcessing: false,
   exif: false,
-  imageType: ImageType.jpg,
+  imageType: "jpg" ,
 };
 
 interface IProps {
