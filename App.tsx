@@ -1,6 +1,6 @@
 import { useCameraPermissions } from "expo-camera";
 import { Button, StyleSheet, Text, View } from "react-native";
-import { Camera } from "./components/Camera/Camera";
+import { Camera } from "./components/camera/Camera";
 import React from "react";
 import { RootSiblingParent } from "react-native-root-siblings";
 import Toast from "react-native-root-toast";

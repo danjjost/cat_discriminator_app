@@ -1,5 +1,8 @@
 import Toast from "react-native-root-toast";
-import { EvaluatePhotoClient, EvaluationResults } from "../EvaluatePhotoClient";
+import {
+  EvaluatePhotoClient,
+  EvaluationResults,
+} from "../network/EvaluatePhotoClient";
 
 export function usePhotoEvaluation() {
   return evaluatePhotoAndDisplayResults;
