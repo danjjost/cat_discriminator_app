@@ -1,5 +1,5 @@
 import { Config } from "../../config";
-import { TrainingCategory } from "../TrainingCategory";
+import { TrainingCategory } from "../models/TrainingCategory";
 
 export class SavePhotoClient {
   uploadPhoto = async (

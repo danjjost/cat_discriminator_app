@@ -1,12 +1,12 @@
 import { CameraPictureOptions } from "expo-camera";
-import { PhotoMode } from "./PhotoModeToggle";
 import { Pressable, View, Text, StyleSheet } from "react-native";
-import { TrainingCategory } from "../TrainingCategory";
+import { TrainingCategory } from "../models/TrainingCategory";
 import { CameraView } from "expo-camera";
 import "setimmediate";
 import { usePhotoEvaluation } from "../hooks/usePhotoEvaluation";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
-import { getTrainingCategoryText } from "../utils/getTrainingCategoryText";
+import { getTrainingCategoryText } from "../util/getTrainingCategoryText";
+import { PhotoMode } from "../models/PhotoMode";
 
 const CAMERA_PICTURE_OPTIONS: CameraPictureOptions = {
   quality: 0.25,

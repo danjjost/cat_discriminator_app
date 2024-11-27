@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { PhotoMode, PhotoModeToggle } from "./PhotoModeToggle";
+import { PhotoModeToggle } from "./PhotoModeToggle";
 import { CameraView } from "expo-camera";
 import { StyleSheet } from "react-native";
-import { TrainingCategory } from "../TrainingCategory";
+import { TrainingCategory } from "../models/TrainingCategory";
 import { CameraControls } from "./CameraControls";
+import { PhotoMode } from "../models/PhotoMode";
 
 export const Camera = () => {
   const [mode, setMode] = useState(PhotoMode.Training);

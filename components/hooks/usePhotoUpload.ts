@@ -1,6 +1,6 @@
 import Toast from "react-native-root-toast";
 import { SavePhotoClient } from "../network/SavePhotoClient";
-import { TrainingCategory } from "../TrainingCategory";
+import { TrainingCategory } from "../models/TrainingCategory";
 
 export function usePhotoUpload() {
   return uploadPhoto;

@@ -1,4 +1,4 @@
-import { TrainingCategory } from "../TrainingCategory";
+import { TrainingCategory } from "../models/TrainingCategory";
 
 export const getTrainingCategoryText = (trainingCategory: TrainingCategory) => {
   switch (trainingCategory) {

@@ -1,9 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-export enum PhotoMode {
-  Scanning,
-  Training,
-}
+import { PhotoMode } from "../models/PhotoMode";
 
 interface IProps {
   currentMode: PhotoMode;
