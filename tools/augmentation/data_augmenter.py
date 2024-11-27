@@ -12,7 +12,7 @@ class DataAugmenter:
             A.HorizontalFlip(p=0.5),
             A.RandomBrightnessContrast(),
             A.ColorJitter(),
-            A.ShiftScaleRotate()
+            A.ShiftScaleRotate(rotate_limit=(-180,180))
         ])
 
     def __call__(self, image):
