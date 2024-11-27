@@ -1,13 +1,15 @@
 import { useRef, useState } from "react";
-import { PhotoMode, PhotoModeToggle } from "./PhotoModeToggle";
+import { PhotoMode, PhotoModeToggle } from "../PhotoModeToggle";
 import { CameraView } from "expo-camera";
 import { StyleSheet } from "react-native";
 import { CameraControls } from "./CameraControls";
-import { TrainingCategory } from "./TrainingCategory";
+import { TrainingCategory } from "../TrainingCategory";
 
 export const Camera = () => {
   const [mode, setMode] = useState(PhotoMode.Training);
-  const [trainingType, setTrainingType] = useState(TrainingCategory.Control);
+  const [trainingCategory, setTrainingType] = useState(
+    TrainingCategory.Control
+  );
   const cameraRef = useRef<CameraView>(null);
 
   const togglePhotoMode = () => {
@@ -29,7 +31,7 @@ export const Camera = () => {
       <CameraControls
         cameraRef={cameraRef}
         photoMode={mode}
-        trainingType={trainingType}
+        trainingCategory={trainingCategory}
         toggleTrainingType={toggleTrainingType}
       />
     </CameraView>

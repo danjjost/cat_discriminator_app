@@ -1,11 +1,26 @@
 {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "files.autoSave": "afterDelay",
-    "[dotenv]": {
-        "editor.defaultFormatter": "foxundermoon.shell-format"
-    },
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features"
-    }
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.autoSave": "afterDelay",
+  "[dotenv]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#008000", // Green
+    "titleBar.inactiveBackground": "#008000", // Green
+    "titleBar.activeForeground": "#FFFFFF",
+    "titleBar.inactiveForeground": "#CCCCCC",
+
+    "activityBar.background": "#006400", // Darker green for better contrast
+    "activityBar.foreground": "#FFFFFF",
+
+    "activityBarBadge.background": "#0000FF", // Red badges for better visibility
+    "activityBarBadge.foreground": "#FFFFFF"
+  }
 }
