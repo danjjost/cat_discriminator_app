@@ -10,19 +10,18 @@ interface IProps {
   togglePhotoMode: () => void;
 }
 
-export const PhotoModeToggle = (p: IProps) => {
-  return (
-    <View style={styles.modeContainer}>
-      <Pressable onPress={p.togglePhotoMode} style={getStyles(p)}>
-        <Text style={styles.buttonFont}>{getButtonText(p)}</Text>
-      </Pressable>
-    </View>
-  );
-};
+export const PhotoModeToggle = (p: IProps) => (
+  <View style={styles.modeContainer}>
+    <Pressable onPress={p.togglePhotoMode} style={getStyles(p)}>
+      <Text style={styles.buttonFont}>{getButtonText(p)}</Text>
+    </Pressable>
+  </View>
+);
+
 const getButtonText = (p: IProps) => {
   return p.currentMode === PhotoMode.Scanning
     ? "Scanning Mode 📸"
-    : "Training Mode 🤓";
+    : "Training Mode 🎓";
 };
 
 const getStyles = (p: IProps) => {

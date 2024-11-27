@@ -1,5 +1,5 @@
 import { CameraPictureOptions } from "expo-camera";
-import { PhotoMode } from "../PhotoModeToggle";
+import { PhotoMode } from "./PhotoModeToggle";
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import { TrainingCategory } from "../TrainingCategory";
 import { CameraView } from "expo-camera";
