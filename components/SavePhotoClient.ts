@@ -26,7 +26,7 @@ const uploadPhotoViaHttp = async (
   base64Image: string
 ) =>
   await fetch(
-    `${new Config().upload_function_url}/${getCategoryString(
+    `${new Config().upload_url}/${getCategoryString(
       trainingCategory
     )}`,
     getRequestOptions(base64Image)
@@ -38,12 +38,10 @@ function getRequestOptions(base64Image: string): RequestInit | undefined {
     headers: {
       "Content-Type": "text/plain",
     },
-    body: sanitizeImage(base64Image),
+    body: base64Image
   };
 }
 
-const sanitizeImage = (base64Image: string) =>
-  base64Image.replace("data:image/jpeg;base64,", "");
 
 function getCategoryString(category: TrainingCategory) {
   var categoryString = TrainingCategory[category].toLowerCase();

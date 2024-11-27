@@ -4,5 +4,8 @@
     "files.autoSave": "afterDelay",
     "[dotenv]": {
         "editor.defaultFormatter": "foxundermoon.shell-format"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     }
 }

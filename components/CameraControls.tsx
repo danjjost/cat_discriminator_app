@@ -8,13 +8,14 @@ import { SavePhotoClient } from "./SavePhotoClient";
 import { TrainingCategory } from "./TrainingCategory";
 import { CameraView } from "expo-camera";
 import "setimmediate";
+import { EvaluatePhotoClient, EvaluationResults } from "./EvaluatePhotoClient";
 
 const CAMERA_PICTURE_OPTIONS: CameraPictureOptions = {
   quality: 0.25,
   base64: true,
   skipProcessing: false,
   exif: false,
-  imageType: "jpg" ,
+  imageType: "jpg",
 };
 
 interface IProps {
@@ -25,26 +26,52 @@ interface IProps {
 }
 
 export const CameraControls = (p: IProps) => {
-  const takePhoto = async () => {
+
+  const uploadPhoto = async (trainingType: TrainingCategory, photoBase64?: string) => {
+    const uploadSuccessful = await new SavePhotoClient().uploadPhoto(
+      trainingType,
+      photoBase64
+    );
     try {
-      if (!p.cameraRef.current) throw new Error("Camera ref is not available.");
-
-      const photo = await p.cameraRef.current.takePictureAsync(
-        CAMERA_PICTURE_OPTIONS
-      );
-
-      var uploadSuccessful = await new SavePhotoClient().uploadPhoto(
-        p.trainingType,
-        photo?.base64
-      );
-
       if (uploadSuccessful) showSuccessToast();
       else throw new Error("Failed to upload photo.");
     } catch (error) {
       console.error("Failed to take photo:", error);
-      showErrorToast();
+      showSavePhotoErrorToast();
     }
   };
+
+  const evaluatePhoto = async (photoBase64?: string) => {
+    const evaluationResults = await new EvaluatePhotoClient().evaluatePhoto(
+      photoBase64
+    );
+
+    try {
+      if (evaluationResults)
+        showResultsToast(evaluationResults);
+      else
+        throw new Error("Failed to evaluate photo.");
+    } catch (error) {
+      console.error("Failed to take photo:", error);
+      showEvaluatePhotoErrorToast();
+    }
+  };
+
+  const takePhoto = async () => {
+    if (!p.cameraRef.current) throw new Error("Camera ref is not available.");
+
+    const photo = await p.cameraRef.current.takePictureAsync(
+      CAMERA_PICTURE_OPTIONS
+    );
+
+    const photoBase64 = sanitizeImage(photo?.base64);
+
+    if (p.photoMode === PhotoMode.Training)
+      uploadPhoto(p.trainingType, photoBase64);
+    else {
+      const results = await evaluatePhoto(photoBase64);
+    }
+  }
 
   return (
     <View style={styles.buttonContainer}>
@@ -76,8 +103,20 @@ const getTrainingTypeText = (p: IProps) => {
   }
 };
 
-function showErrorToast() {
+
+function showSavePhotoErrorToast() {
   Toast.show("❌ Failed to Save.", {
+    duration: 1500,
+    position: Toast.positions.BOTTOM,
+    shadow: true,
+    animation: true,
+    hideOnPress: true,
+    backgroundColor: "red",
+  });
+}
+
+function showEvaluatePhotoErrorToast() {
+  Toast.show("❌ Failed to Evaluate Photo.", {
     duration: 1500,
     position: Toast.positions.BOTTOM,
     shadow: true,
@@ -97,6 +136,9 @@ function showSuccessToast() {
     backgroundColor: "lightgreen",
   });
 }
+
+const sanitizeImage = (base64Image?: string) =>
+  base64Image?.replace("data:image/jpeg;base64,", "");
 
 const styles = StyleSheet.create({
   buttonContainer: {
@@ -130,3 +172,35 @@ const styles = StyleSheet.create({
     color: "white",
   },
 });
+
+
+function showResultsToast(results: EvaluationResults) {
+  const prediction = getPrediction(results);
+  Toast.show(`
+        Prediction: ${prediction}\r\n
+        Captain: ${results.captain}\r\n 
+        B: ${results.bathroom_cat}\r\n, 
+        Control: ${results.control}`, {
+    duration: 3000,
+    position: Toast.positions.BOTTOM,
+    shadow: true,
+    animation: true,
+    hideOnPress: true,
+    backgroundColor: "lightgreen",
+  });
+}
+
+const getPrediction = (results: EvaluationResults) => {
+  if (!results) return "No prediction available.";
+
+  const max = Math.max(
+    results.captain ?? -1,
+    results.bathroom_cat ?? -1,
+    results.control ?? -1
+  );
+
+  if (max === results.captain) return "😻 Captain";
+  if (max === results.bathroom_cat) return "😼 Bathroom Cat";
+  if (max === results.control) return "🪑 Control";
+  return "No prediction available.";
+}
