@@ -27,6 +27,12 @@ class CatDiscriminatorNeuralNet(nn.Module):
         self.fc4 = nn.Linear(256, 64)
         self.fc5 = nn.Linear(64, 3)
         
+        self.dropout1 = nn.Dropout(p=0.5)
+        self.dropout2 = nn.Dropout(p=0.5)
+        self.dropout3 = nn.Dropout(p=0.5)
+        self.dropout4 = nn.Dropout(p=0.5)
+
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
 
         # Convolutional layers
@@ -54,15 +60,19 @@ class CatDiscriminatorNeuralNet(nn.Module):
 
         x = self.fc1(x)
         x = F.relu(x)
+        x = self.dropout1(x) 
         
         x = self.fc2(x)
         x = F.relu(x)
+        x = self.dropout2(x)
         
         x = self.fc3(x)
         x = F.relu(x)
+        x = self.dropout3(x)
         
         x = self.fc4(x)
         x = F.relu(x)
+        x = self.dropout4(x)
 
         x = self.fc5(x)
 

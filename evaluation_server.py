@@ -20,11 +20,13 @@ from cats_dataset import CatsDataset
 import torch
 
 from cat_discriminator_neural_net import CatDiscriminatorNeuralNet
-
-trained_model_path = "trained_networks/cat_discriminator_512x512.pth"
-working_directory = os.getcwd() + "/temp"
-
 import socket
+
+
+# 🔧 CONFIG
+trained_model_path = "trained_networks/cat_discriminator_512x512.pth"
+working_directory = os.getcwd() + "\\temp"
+is_confident_threshold = 0.7
 
 # Connect to an external server to get the LAN IP (doesn't actually send data)
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,6 +72,7 @@ class CustomHTTPServer(HTTPServer):
             os.makedirs(working_directory)
             
         self.net = CatDiscriminatorNeuralNet()
+        self.net.train(False)
 
         if os.path.isfile(trained_model_path):
             self.net.load_state_dict(torch.load(trained_model_path, weights_only=True))
@@ -115,11 +118,11 @@ class EvaluationServer(BaseHTTPRequestHandler):
         image_base64 = self.rfile.read(content_length)
         
         image_id = uuid.uuid4()
-        image_path = working_directory + "/" + str(image_id) + ".jpg"
+        image_path = working_directory + "\\" + str(image_id) + ".jpg"
         image_data = self.base64_to_image(image_base64)
+        print(image_path)
 
-        if os.path.isfile(image_path):
-            os.remove(image_path)
+        self.clear_file(image_path)
 
         with open(image_path, "wb") as image_file:
             image_file.write(image_data)
@@ -136,6 +139,13 @@ class EvaluationServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(result_json.encode('utf-8'))
         
+        if(self.is_confident(evaluation_result)):
+            self.clear_file(image_path)
+
+    def is_confident(self, evaluation_result: EvaluationResult) -> bool:
+        return evaluation_result.bathroom_cat > is_confident_threshold or evaluation_result.captain > is_confident_threshold or evaluation_result.control > is_confident_threshold
+
+    def clear_file(self, image_path):
         if os.path.isfile(image_path):
             os.remove(image_path)
 
