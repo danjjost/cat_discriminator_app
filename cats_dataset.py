@@ -61,3 +61,6 @@ class CatsDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         return image, label
+
+    def index_to_class_name(self, idx):
+        return CatsDataset.classes[idx]
