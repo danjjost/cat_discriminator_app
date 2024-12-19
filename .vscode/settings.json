@@ -7,6 +7,7 @@
     "activityBar.background": "#000080",
     "activityBar.foreground": "#FFFFFF",
     "activityBarBadge.background": "#008000",
-    "activityBarBadge.foreground": "#FFFFFF"
+    "activityBarBadge.foreground": "#FFFFFF",
+    "python.languageServer": "Pylance"
   }
 }
