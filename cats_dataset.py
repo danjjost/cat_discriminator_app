@@ -1,6 +1,5 @@
 import os
 from torch.utils.data import Dataset
-from torchvision import transforms
 from PIL import Image
 import torch
 
@@ -22,18 +21,25 @@ class CatsDataset(Dataset):
         self.__add_images_and_labels('control', control_directory)
 
 
+
+    def index_to_class_name(self, idx: int) -> str:
+        return CatsDataset.classes[idx]
+    
+    def class_name_to_index(self, class_name: str) -> int:
+        return CatsDataset.classes.index(class_name)
+    
     def __add_images_and_labels(self, class_name: str, directory: str):
         for img_name in os.listdir(directory):
             if img_name.lower().endswith('.jpg'):
-                img_path = os.path.join(directory, img_name)
-                self.image_paths.append(img_path)
-                
-                label = torch.zeros(len(CatsDataset.classes), dtype=torch.float32)
-                label[self.class_name_to_index(class_name)] = 1.0
+                self.image_paths.append(os.path.join(directory, img_name))
+                self.labels.append(self.__build_label(class_name))
 
-                self.labels.append(label)
-                        
-                    
+    def __build_label(self, class_name: str):
+        label = torch.zeros(len(CatsDataset.classes), dtype=torch.float32)
+        label[self.class_name_to_index(class_name)] = 1.0
+        
+        return label
+
     def __len__(self):
         return len(self.image_paths)
 
@@ -46,9 +52,3 @@ class CatsDataset(Dataset):
             transformed_image = self.transform(pil_image)
 
         return transformed_image, label
-
-    def index_to_class_name(self, idx: int) -> str:
-        return CatsDataset.classes[idx]
-    
-    def class_name_to_index(self, class_name: str) -> int:
-        return CatsDataset.classes.index(class_name)
