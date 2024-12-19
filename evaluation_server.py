@@ -15,11 +15,11 @@ import os
 
 from PIL import Image
 
-from cat_discriminator_neural_net import CatDiscriminatorNeuralNet
+from src.cat_discriminator_neural_net import CatDiscriminatorNeuralNet
 from src.cats_dataset import CatsDataset
 import torch
 
-from cat_discriminator_neural_net import CatDiscriminatorNeuralNet
+from src.cat_discriminator_neural_net import CatDiscriminatorNeuralNet
 import socket
 
 
@@ -152,11 +152,6 @@ class EvaluationServer(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":        
     webServer = CustomHTTPServer((hostName, serverPort), EvaluationServer)
-
-    #context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    #context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
-
-    #webServer.socket = context.wrap_socket(webServer.socket, server_side=True)
 
     print("Server started http://%s:%s" % (hostName, serverPort))
 
