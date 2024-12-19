@@ -1,9 +1,17 @@
+import numpy
 import torch
 
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.utils.data import DataLoader
+
+from src.cats_dataset import CatsDataset
+from src.models.cat_evaluation_result import CatEvaluationResult
+from src.models.cats_evaluation_report import CatsEvaluationReport
+
 class CatDiscriminatorNeuralNet(nn.Module):
+
     def __init__(self, debug = False) -> None:
         super().__init__()
         self.debug = debug
@@ -77,3 +85,37 @@ class CatDiscriminatorNeuralNet(nn.Module):
         x = self.fc5(x)
 
         return x
+
+    def build_evaluation_result(self, labels, outputs):
+        r = CatEvaluationResult()
+
+        numpy_labels = labels.flatten().cpu().numpy()
+        max_label_index = numpy.argmax(numpy_labels)
+
+        numpy_outputs = outputs.flatten().cpu().numpy()
+        max_output_index = numpy.argmax(numpy_outputs)
+
+        r.actual_label = CatsDataset.index_to_class_name(max_label_index)
+        r.predicted_label = CatsDataset.index_to_class_name(max_output_index)
+
+        r.bathrooom_cat_score = numpy_outputs[CatsDataset.class_name_to_index('bathroom-cat')]
+        r.captain_score = numpy_outputs[CatsDataset.class_name_to_index('captain')]
+        r.control_score = numpy_outputs[CatsDataset.class_name_to_index('control')]
+
+        return r
+    
+    def evaluate(self, data_loader: DataLoader) -> torch.Tensor:
+        evaluation_report = CatsEvaluationReport()
+
+        with torch.no_grad():
+            for inputs, labels in data_loader:
+                inputs = inputs.to('cuda')
+                labels = labels.to('cuda')
+
+                outputs = self(inputs) 
+
+                evaluation_result = self.build_evaluation_result(labels, outputs)
+                evaluation_report.add_result(evaluation_result)
+
+        evaluation_report.finalize()
+        return evaluation_report

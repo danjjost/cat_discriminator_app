@@ -34,5 +34,4 @@ class DataAugmenter:
         augmented = self.albumentations_transform(image=image)
 
         image_tensor = augmented['image']
-        print(f"DataAugmenter output dtype: {image_tensor.dtype}")  # Add this line
         return image_tensor

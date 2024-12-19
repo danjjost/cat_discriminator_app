@@ -22,10 +22,10 @@ class CatsDataset(Dataset):
 
 
 
-    def index_to_class_name(self, idx: int) -> str:
+    def index_to_class_name(idx: int) -> str:
         return CatsDataset.classes[idx]
     
-    def class_name_to_index(self, class_name: str) -> int:
+    def class_name_to_index(class_name: str) -> int:
         return CatsDataset.classes.index(class_name)
     
     def __add_images_and_labels(self, class_name: str, directory: str):
@@ -36,7 +36,7 @@ class CatsDataset(Dataset):
 
     def __build_label(self, class_name: str):
         label = torch.zeros(len(CatsDataset.classes), dtype=torch.float32)
-        label[self.class_name_to_index(class_name)] = 1.0
+        label[CatsDataset.class_name_to_index(class_name)] = 1.0
         
         return label
 
