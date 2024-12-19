@@ -16,7 +16,7 @@ import os
 from PIL import Image
 
 from cat_discriminator_neural_net import CatDiscriminatorNeuralNet
-from cats_dataset import CatsDataset
+from src.cats_dataset import CatsDataset
 import torch
 
 from cat_discriminator_neural_net import CatDiscriminatorNeuralNet
