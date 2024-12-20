@@ -32,5 +32,4 @@ class CatsEvaluationReport:
         self.print_results()
 
         for result in self.results:
-            print(result.verbose_string())
-            print("")
+            result.print_result()

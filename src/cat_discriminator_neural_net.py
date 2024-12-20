@@ -11,7 +11,6 @@ from src.models.cat_evaluation_result import CatEvaluationResult
 from src.models.cats_evaluation_report import CatsEvaluationReport
 
 class CatDiscriminatorNeuralNet(nn.Module):
-
     def __init__(self, debug = False) -> None:
         super().__init__()
         self.debug = debug
@@ -89,22 +88,32 @@ class CatDiscriminatorNeuralNet(nn.Module):
     def build_evaluation_result(self, labels, outputs):
         r = CatEvaluationResult()
 
-        numpy_labels = labels.flatten().cpu().numpy()
-        max_label_index = numpy.argmax(numpy_labels)
+        if labels is not None:
+            numpy_labels = labels.flatten().cpu().numpy()
+            max_label_index = numpy.argmax(numpy_labels)
+            r.actual_label = CatsDataset.index_to_class_name(max_label_index)
+
 
         numpy_outputs = outputs.flatten().cpu().numpy()
         max_output_index = numpy.argmax(numpy_outputs)
 
-        r.actual_label = CatsDataset.index_to_class_name(max_label_index)
         r.predicted_label = CatsDataset.index_to_class_name(max_output_index)
 
         r.bathrooom_cat_score = numpy_outputs[CatsDataset.class_name_to_index('bathroom-cat')]
         r.captain_score = numpy_outputs[CatsDataset.class_name_to_index('captain')]
         r.control_score = numpy_outputs[CatsDataset.class_name_to_index('control')]
 
+        softmax_outputs = F.softmax(outputs, dim=1)
+        softmax_numpy_outputs = softmax_outputs.flatten().cpu().numpy()
+
+        r.bathrooom_cat_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('bathroom-cat')] * 100
+        r.captain_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('captain')] * 100
+        r.control_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('control')] * 100
+
         return r
     
-    def evaluate(self, data_loader: DataLoader) -> torch.Tensor:
+    def evaluate(self, data_loader: DataLoader) -> CatsEvaluationReport:
+        self.eval()
         evaluation_report = CatsEvaluationReport()
 
         with torch.no_grad():
@@ -119,3 +128,13 @@ class CatDiscriminatorNeuralNet(nn.Module):
 
         evaluation_report.finalize()
         return evaluation_report
+    
+    def evaluate_single_image(self, inputs):
+        self.eval()
+        with torch.no_grad():
+            inputs = inputs.to('cuda')
+
+            outputs = self(inputs) 
+
+            evaluation_result = self.build_evaluation_result(None, outputs)
+            return evaluation_result
