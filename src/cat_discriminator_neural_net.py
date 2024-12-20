@@ -1,8 +1,11 @@
+import os
 import numpy
 import torch
 
 import torch.nn as nn
 import torch.nn.functional as F
+
+import torch.optim as optim
 
 from torch.utils.data import DataLoader
 
@@ -11,10 +14,18 @@ from src.models.cat_evaluation_result import CatEvaluationResult
 from src.models.cats_evaluation_report import CatsEvaluationReport
 
 class CatDiscriminatorNeuralNet(nn.Module):
-    def __init__(self, debug = False) -> None:
+    def __init__(self, learning_rate=0.1, saved_model_path=None) -> None:
         super().__init__()
-        self.debug = debug
         
+        self.initialize_layers()
+
+        if saved_model_path is not None:
+            self.try_load_model(saved_model_path)
+        
+        self.loss_function = torch.nn.CrossEntropyLoss()
+        self.optimizer = optim.SGD(self.parameters(), lr=learning_rate)
+
+    def initialize_layers(self):
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=12, kernel_size=10) # 10x10 kernels, moving across the 3 input channels (rgb), outputting 12 channels. The new (12) channels will be 504x504
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # 12 feature maps, 252x252
         
@@ -39,7 +50,13 @@ class CatDiscriminatorNeuralNet(nn.Module):
         self.dropout3 = nn.Dropout(p=0.5)
         self.dropout4 = nn.Dropout(p=0.5)
 
-        
+    def try_load_model(self, saved_model_path):
+        if os.path.isfile(saved_model_path):
+            self.load_state_dict(torch.load(saved_model_path, weights_only=False))
+        else:
+            print(f"WARNING: Model file not found '{saved_model_path}'. Generating a new model!")
+
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
 
         # Convolutional layers
@@ -84,17 +101,64 @@ class CatDiscriminatorNeuralNet(nn.Module):
         x = self.fc5(x)
 
         return x
+    
+    def run_training_batch(self, learning_rate, dataloader):
+        self.train(True)
 
-    def build_evaluation_result(self, labels, outputs):
+        running_loss = 0.0
+        for i, data in enumerate(dataloader):
+            input_set, label_set = data
+            input_set.to('cuda')
+            label_set.to('cuda')
+            
+            self.optimizer.zero_grad()
+
+            output_set = self(input_set)
+        
+            loss = self.loss_function(output_set, label_set)
+            loss.backward()
+        
+            self.optimizer.step()
+        
+            running_loss += loss.item()
+        
+        print (f'Loss: {running_loss / len(dataloader):.4f}')
+        epoch += 1
+
+
+    def evaluate(self, data_loader: DataLoader) -> CatsEvaluationReport:
+        if data_loader.batch_size != 1:
+            raise ValueError("Expected DataLoader to have a batch size of 1 in evaluation mode!")
+        
+        self.eval()
+        evaluation_report = CatsEvaluationReport()
+
+        for inputs_set, labels_set in data_loader:
+            evaluation_result = self.evaluate_single_image(inputs_set, labels_set)
+            evaluation_report.add_result(evaluation_result)
+
+        return evaluation_report.finalize()
+    
+    def evaluate_single_image(self, inputs_set, labels_set) -> CatEvaluationResult:
+        self.eval()
+        with torch.no_grad():
+            inputs_set = inputs_set.to('cuda')
+            labels_set = labels_set.to('cuda')
+
+            outputs_set = self(inputs_set) 
+
+            evaluation_result = self.build_evaluation_result(labels_set, outputs_set)
+            return evaluation_result
+
+    def build_evaluation_result(self, labels_set, outputs_set):
         r = CatEvaluationResult()
 
-        if labels is not None:
-            numpy_labels = labels.flatten().cpu().numpy()
+        if labels_set is not None:
+            numpy_labels = labels_set.flatten().cpu().numpy()
             max_label_index = numpy.argmax(numpy_labels)
             r.actual_label = CatsDataset.index_to_class_name(max_label_index)
 
-
-        numpy_outputs = outputs.flatten().cpu().numpy()
+        numpy_outputs = outputs_set.flatten().cpu().numpy()
         max_output_index = numpy.argmax(numpy_outputs)
 
         r.predicted_label = CatsDataset.index_to_class_name(max_output_index)
@@ -103,7 +167,7 @@ class CatDiscriminatorNeuralNet(nn.Module):
         r.captain_score = numpy_outputs[CatsDataset.class_name_to_index('captain')]
         r.control_score = numpy_outputs[CatsDataset.class_name_to_index('control')]
 
-        softmax_outputs = F.softmax(outputs, dim=1)
+        softmax_outputs = F.softmax(outputs_set, dim=1)
         softmax_numpy_outputs = softmax_outputs.flatten().cpu().numpy()
 
         r.bathrooom_cat_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('bathroom-cat')] * 100
@@ -111,30 +175,3 @@ class CatDiscriminatorNeuralNet(nn.Module):
         r.control_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('control')] * 100
 
         return r
-    
-    def evaluate(self, data_loader: DataLoader) -> CatsEvaluationReport:
-        self.eval()
-        evaluation_report = CatsEvaluationReport()
-
-        with torch.no_grad():
-            for inputs, labels in data_loader:
-                inputs = inputs.to('cuda')
-                labels = labels.to('cuda')
-
-                outputs = self(inputs) 
-
-                evaluation_result = self.build_evaluation_result(labels, outputs)
-                evaluation_report.add_result(evaluation_result)
-
-        evaluation_report.finalize()
-        return evaluation_report
-    
-    def evaluate_single_image(self, inputs):
-        self.eval()
-        with torch.no_grad():
-            inputs = inputs.to('cuda')
-
-            outputs = self(inputs) 
-
-            evaluation_result = self.build_evaluation_result(None, outputs)
-            return evaluation_result

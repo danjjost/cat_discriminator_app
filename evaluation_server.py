@@ -51,8 +51,7 @@ class EvaluationServer(BaseHTTPRequestHandler):
         BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def initialize_neural_net(self):
-        self.net = CatDiscriminatorNeuralNet()
-        self.net.load_state_dict(torch.load(saved_model_path))
+        self.net = CatDiscriminatorNeuralNet(saved_model_path)
         self.net.cuda()
     
     def load_image(self, image_path: str) -> torch.Tensor:
@@ -87,23 +86,25 @@ class EvaluationServer(BaseHTTPRequestHandler):
 
         evaluation_result = self.net.evaluate_single_image(image)
 
-        result_json = evaluation_result.to_json()
+        self.send_evaluation_result(evaluation_result)
+        
+        if(self.is_confident(evaluation_result)):
+            self.delete_file(image_path)
 
+    def send_evaluation_result(self, evaluation_result):
+        result_json = evaluation_result.to_json()
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*") 
         self.end_headers()
         self.wfile.write(result_json.encode('utf-8'))
-        
-        if(self.is_confident(evaluation_result)):
-            self.clear_file(image_path)
 
     def save_image(self, image_base64):
         image_id = uuid.uuid4()
         image_path = uncertain_image_directory + "\\" + str(image_id) + ".jpg"
         image_data = self.base64_to_image(image_base64)        
 
-        self.clear_file(image_path)
+        self.delete_file(image_path)
 
         with open(image_path, "wb") as image_file:
             image_file.write(image_data)
@@ -113,7 +114,7 @@ class EvaluationServer(BaseHTTPRequestHandler):
     def is_confident(self, evaluation_result: CatEvaluationResult) -> bool:
         return evaluation_result.bathrooom_cat_percent > is_confident_threshold or evaluation_result.captain_percent > is_confident_threshold or evaluation_result.control_percent > is_confident_threshold
 
-    def clear_file(self, image_path):
+    def delete_file(self, image_path):
         if os.path.isfile(image_path):
             os.remove(image_path)
 

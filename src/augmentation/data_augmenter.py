@@ -6,11 +6,23 @@ import torch
 
 
 class DataAugmenter:
-    def __init__(self, target_image_size: int, augment_images: bool = True):
-        print("DataAugmenter initialized")
-    
+    def __init__(self, target_image_size: int, augment_images: bool):
         if augment_images:
-            self.transforms = [
+            self.initialize_augmented_transforms(target_image_size)
+        else:
+            self.initialize_direct_transforms(target_image_size)
+
+
+        self.albumentations_transform = A.Compose(self.transforms)
+
+    def initialize_direct_transforms(self, target_image_size):
+        self.transforms = [
+                A.Resize(target_image_size, target_image_size),
+                A.Normalize((0.5, 0.5, 0.5))
+            ]
+
+    def initialize_augmented_transforms(self, target_image_size):
+        self.transforms = [
                 A.Resize(target_image_size, target_image_size),
                 A.HorizontalFlip(p=0.5),
                 A.RandomBrightnessContrast(),
@@ -18,14 +30,6 @@ class DataAugmenter:
                 A.ShiftScaleRotate(rotate_limit=(-180,180)),
                 A.Normalize((0.5, 0.5, 0.5))
             ]
-        else:
-            self.transforms = [
-                A.Resize(target_image_size, target_image_size),
-                A.Normalize((0.5, 0.5, 0.5))
-            ]
-
-
-        self.albumentations_transform = A.Compose(self.transforms)
         
     def __call__(self, image):
         if isinstance(image, PIL.Image.Image):

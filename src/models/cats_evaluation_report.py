@@ -10,10 +10,11 @@ class CatsEvaluationReport:
     def add_result(self, result: CatEvaluationResult):
         self.results.append(result)
 
-    def finalize(self):
+    def finalize(self) -> 'CatsEvaluationReport':
         self.__set_number_correct()
         self.total_evaluations = len(self.results)
         self.percent_correct = self.number_correct / len(self.results) * 100
+        return self
 
     def __set_number_correct(self):
         self.number_correct = 0
