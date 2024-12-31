@@ -143,7 +143,8 @@ class CatDiscriminatorNeuralNet(nn.Module):
         self.eval()
         with torch.no_grad():
             inputs_set = inputs_set.to('cuda')
-            labels_set = labels_set.to('cuda')
+            if labels_set is not None:
+                labels_set = labels_set.to('cuda')
 
             outputs_set = self(inputs_set) 
 

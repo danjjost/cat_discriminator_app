@@ -22,43 +22,44 @@ from src.models.cat_evaluation_result import CatEvaluationResult
 
 
 # 🔧 CONFIG
-saved_model_path = "trained_networks/cat_discriminator.pth"
-uncertain_image_directory = os.getcwd() + "\\data\\uncertain-images"
-is_confident_threshold = 0.7
-image_size=512
-
-# Connect to an external server to get the LAN IP (doesn't actually send data)
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.connect(("8.8.8.8", 80))
-hostName = s.getsockname()[0]
-s.close()
-serverPort = 3005
+class EvaluationServerConfig():
+    def __init__(self):
+        self.saved_model_path = "trained_networks/cat_discriminator.pth"
+        self.uncertain_image_directory = os.getcwd() + "\\data\\uncertain-images"
+        self.is_confident_threshold = 0.7
+        self.image_size=512
 
 
 class CustomHTTPServer(HTTPServer):    
-    def __init__(self, server_address, RequestHandlerClass):
-        super().__init__(server_address, RequestHandlerClass)
+    def __init__(self, config: EvaluationServerConfig, server_address, RequestHandlerClass):
+        self.config = config
+        super().__init__(server_address, lambda *args, **kwargs: RequestHandlerClass(*args, server=self, **kwargs))
         print("Initializing server...")
-
-        if not os.path.exists(uncertain_image_directory):
-            os.makedirs(uncertain_image_directory)
+        
 
 class EvaluationServer(BaseHTTPRequestHandler):
     def __init__(self, *args, server=None, **kwargs):
+        self.config = server.config
+        config = server.config
+
+        if not os.path.exists(config.uncertain_image_directory):
+            os.makedirs(config.uncertain_image_directory)
+
         self.initialize_neural_net()
         
         self.server: CustomHTTPServer = server
+
         BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def initialize_neural_net(self):
-        self.net = CatDiscriminatorNeuralNet(saved_model_path)
+        self.net = CatDiscriminatorNeuralNet(saved_model_path=self.config.saved_model_path)
         self.net.cuda()
     
     def load_image(self, image_path: str) -> torch.Tensor:
         image = Image.open(image_path).convert('RGB')
 
         transform = transforms.Compose([
-            DataAugmenter(target_image_size=image_size, augment_images=False),
+            DataAugmenter(target_image_size=self.config.image_size, augment_images=False),
             transforms.ToTensor(), # converts numpy to tensor
         ])
         
@@ -84,7 +85,7 @@ class EvaluationServer(BaseHTTPRequestHandler):
         image = self.load_image(image_path)
         image = image.unsqueeze(0).cuda()
 
-        evaluation_result = self.net.evaluate_single_image(image)
+        evaluation_result = self.net.evaluate_single_image(image, labels_set=None)
 
         self.send_evaluation_result(evaluation_result)
         
@@ -101,7 +102,7 @@ class EvaluationServer(BaseHTTPRequestHandler):
 
     def save_image(self, image_base64):
         image_id = uuid.uuid4()
-        image_path = uncertain_image_directory + "\\" + str(image_id) + ".jpg"
+        image_path = self.config.uncertain_image_directory + "\\" + str(image_id) + ".jpg"
         image_data = self.base64_to_image(image_base64)        
 
         self.delete_file(image_path)
@@ -112,22 +113,8 @@ class EvaluationServer(BaseHTTPRequestHandler):
         return image_path
 
     def is_confident(self, evaluation_result: CatEvaluationResult) -> bool:
-        return evaluation_result.bathrooom_cat_percent > is_confident_threshold or evaluation_result.captain_percent > is_confident_threshold or evaluation_result.control_percent > is_confident_threshold
+        return evaluation_result.bathrooom_cat_percent > self.config.is_confident_threshold or evaluation_result.captain_percent > self.config.is_confident_threshold or evaluation_result.control_percent > self.config.is_confident_threshold
 
     def delete_file(self, image_path):
         if os.path.isfile(image_path):
             os.remove(image_path)
-
-
-if __name__ == "__main__":        
-    webServer = CustomHTTPServer((hostName, serverPort), EvaluationServer)
-
-    print("Server started http://%s:%s" % (hostName, serverPort))
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    webServer.server_close()
-    print("Server stopped.")
