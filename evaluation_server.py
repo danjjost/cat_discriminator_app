@@ -2,6 +2,7 @@ import base64
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
 from socket import socket
+import time
 import uuid
 import torch.nn.functional as F
 
@@ -26,7 +27,7 @@ class EvaluationServerConfig():
     def __init__(self):
         self.saved_model_path = "trained_networks/cat_discriminator.pth"
         self.uncertain_image_directory = os.getcwd() + "\\data\\uncertain-images"
-        self.is_confident_threshold = 0.7
+        self.is_confident_threshold = 70
         self.image_size=512
 
 
@@ -77,6 +78,7 @@ class EvaluationServer(BaseHTTPRequestHandler):
         return base64.b64decode(encoded_string)
             
     def do_POST(self):        
+        start_time = time.time()
         content_length = int(self.headers['Content-Length'])
         image_base64 = self.rfile.read(content_length)
         
@@ -91,6 +93,8 @@ class EvaluationServer(BaseHTTPRequestHandler):
         
         if(self.is_confident(evaluation_result)):
             self.delete_file(image_path)
+
+        print(f"Request took {time.time() - start_time} seconds")
 
     def send_evaluation_result(self, evaluation_result):
         result_json = evaluation_result.to_json()
