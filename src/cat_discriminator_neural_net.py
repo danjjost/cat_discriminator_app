@@ -108,8 +108,8 @@ class CatDiscriminatorNeuralNet(nn.Module):
         running_loss = 0.0
         for i, data in enumerate(dataloader):
             input_set, label_set = data
-            input_set.to('cuda')
-            label_set.to('cuda')
+            input_set = input_set.to('cuda')
+            label_set = label_set.to('cuda')
             
             self.optimizer.zero_grad()
 
@@ -123,7 +123,6 @@ class CatDiscriminatorNeuralNet(nn.Module):
             running_loss += loss.item()
         
         print (f'Loss: {running_loss / len(dataloader):.4f}')
-        epoch += 1
 
 
     def evaluate(self, data_loader: DataLoader) -> CatsEvaluationReport:
