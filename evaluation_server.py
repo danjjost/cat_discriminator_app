@@ -87,7 +87,7 @@ class EvaluationServer(BaseHTTPRequestHandler):
         image = self.load_image(image_path)
         image = image.unsqueeze(0).cuda()
 
-        evaluation_result = self.net.evaluate_single_image(image, labels_set=None)
+        evaluation_result = self.net.evaluate_single_image(image, actual_label=None)
 
         self.send_evaluation_result(evaluation_result)
         

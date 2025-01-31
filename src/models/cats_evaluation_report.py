@@ -18,8 +18,11 @@ class CatsEvaluationReport:
 
     def __set_number_correct(self):
         self.number_correct = 0
+
         for result in self.results:
-            if result.actual_label == result.predicted_label:
+            if result.actual_label == 0 and result.predicted_label < 0.5:
+                self.number_correct += 1
+            elif result.actual_label == 1 and result.predicted_label > 0.5:
                 self.number_correct += 1
 
     def print_results(self):

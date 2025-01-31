@@ -3,40 +3,24 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torch
 
-class CatsDataset(Dataset):
-    classes = ['bathroom-cat', 'captain', 'control']
-    
-    def __init__(self, root_dir, bathroom_cat_folder='bathroom-cat', captain_folder='captain', control_folder='control', transform=None):
+class CatsDataset(Dataset):    
+    def __init__(self, root_dir, control_folders=['training/bathroom-cat', 'synthetic/tortoiseshell', 'synthetic/control', 'training/control'], captain_present_folders=['training/captain', 'synthetic/tabby'], transform=None):
         self.transform = transform
 
-        bathroom_cat_directory = os.path.join(root_dir, bathroom_cat_folder)
-        captain_directory = os.path.join(root_dir, captain_folder)
-        control_directory = os.path.join(root_dir, control_folder)
-        
         self.image_paths = []
         self.labels = []
 
-        self.__add_images_and_labels('bathroom-cat', bathroom_cat_directory)
-        self.__add_images_and_labels('captain', captain_directory)
-        self.__add_images_and_labels('control', control_directory)
+        for control_folder in control_folders:
+            self.__add_images_with_label(0, os.path.join(root_dir, control_folder))
 
-
-
-    def index_to_class_name(idx: int) -> str:
-        return CatsDataset.classes[idx]
+        for captain_present_folder in captain_present_folders:
+            self.__add_images_with_label(1, os.path.join(root_dir, captain_present_folder))
     
-    def class_name_to_index(class_name: str) -> int:
-        return CatsDataset.classes.index(class_name)
-    
-    def __add_images_and_labels(self, class_name: str, directory: str):
+    def __add_images_with_label(self, label: int, directory: str):
         for img_name in os.listdir(directory):
             if img_name.lower().endswith('.jpg'):
                 self.image_paths.append(os.path.join(directory, img_name))
-                self.labels.append(self.__build_label(class_name))
-
-    def __build_label(self, class_name: str):
-        label = torch.zeros(len(CatsDataset.classes), dtype=torch.float32)
-        label[CatsDataset.class_name_to_index(class_name)] = 1.0
+                self.labels.append(torch.tensor(label, dtype=torch.float32))
         
         return label
 

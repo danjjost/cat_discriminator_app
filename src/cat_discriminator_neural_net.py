@@ -22,8 +22,8 @@ class CatDiscriminatorNeuralNet(nn.Module):
         if saved_model_path is not None:
             self.try_load_model(saved_model_path)
         
-        self.loss_function = torch.nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.parameters(), lr=learning_rate)
+        self.loss_function = torch.nn.BCEWithLogitsLoss()
+        self.optimizer = optim.Adam(self.parameters(), lr=0.0001)
 
     def initialize_layers(self):
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=12, kernel_size=10) # 10x10 kernels, moving across the 3 input channels (rgb), outputting 12 channels. The new (12) channels will be 504x504
@@ -43,7 +43,7 @@ class CatDiscriminatorNeuralNet(nn.Module):
         self.fc2 = nn.Linear(1624, 864)
         self.fc3 = nn.Linear(864, 256)
         self.fc4 = nn.Linear(256, 64)
-        self.fc5 = nn.Linear(64, 3)
+        self.fc5 = nn.Linear(64, 1)
         
         self.dropout1 = nn.Dropout(p=0.5)
         self.dropout2 = nn.Dropout(p=0.5)
@@ -99,7 +99,6 @@ class CatDiscriminatorNeuralNet(nn.Module):
         x = self.dropout4(x)
 
         x = self.fc5(x)
-
         return x
     
     def run_training_batch(self, learning_rate, dataloader):
@@ -109,7 +108,7 @@ class CatDiscriminatorNeuralNet(nn.Module):
         for i, data in enumerate(dataloader):
             input_set, label_set = data
             input_set = input_set.to('cuda')
-            label_set = label_set.to('cuda')
+            label_set = label_set.to('cuda').unsqueeze(1).float()
             
             self.optimizer.zero_grad()
 
@@ -125,53 +124,49 @@ class CatDiscriminatorNeuralNet(nn.Module):
         print (f'Loss: {running_loss / len(dataloader):.4f}')
 
 
-    def evaluate(self, data_loader: DataLoader) -> CatsEvaluationReport:
+    def evaluate_data_set(self, data_loader: DataLoader) -> CatsEvaluationReport:
         if data_loader.batch_size != 1:
             raise ValueError("Expected DataLoader to have a batch size of 1 in evaluation mode!")
         
         self.eval()
         evaluation_report = CatsEvaluationReport()
 
-        for inputs_set, labels_set in data_loader:
-            evaluation_result = self.evaluate_single_image(inputs_set, labels_set)
+        for input_image_tensor, actual_label in data_loader:
+            evaluation_result = self.evaluate_single_image(input_image_tensor, actual_label)
             evaluation_report.add_result(evaluation_result)
 
         return evaluation_report.finalize()
     
-    def evaluate_single_image(self, inputs_set, labels_set) -> CatEvaluationResult:
+    def evaluate_single_image(self, input_image_tensor, actual_label=None) -> CatEvaluationResult:
         self.eval()
         with torch.no_grad():
-            inputs_set = inputs_set.to('cuda')
-            if labels_set is not None:
-                labels_set = labels_set.to('cuda')
+            input_image_tensor = input_image_tensor.to('cuda')
+            
+            if actual_label is not None:
+                actual_label = actual_label.to('cuda')
 
-            outputs_set = self(inputs_set) 
+            output_tensor = self(input_image_tensor) 
 
-            evaluation_result = self.build_evaluation_result(labels_set, outputs_set)
+            evaluation_result = self.build_evaluation_result(actual_label, output_tensor)
             return evaluation_result
 
-    def build_evaluation_result(self, labels_set, outputs_set):
+    def build_evaluation_result(self, actual_label, output_tensor):
         r = CatEvaluationResult()
 
-        if labels_set is not None:
-            numpy_labels = labels_set.flatten().cpu().numpy()
-            max_label_index = numpy.argmax(numpy_labels)
-            r.actual_label = CatsDataset.index_to_class_name(max_label_index)
+        if actual_label is not None:
+            numpy_label = actual_label.flatten().cpu().numpy()[0]
+            r.actual_label = numpy_label
 
-        numpy_outputs = outputs_set.flatten().cpu().numpy()
-        max_output_index = numpy.argmax(numpy_outputs)
+        numpy_output = torch.sigmoid(output_tensor).flatten().cpu().numpy()[0]
 
-        r.predicted_label = CatsDataset.index_to_class_name(max_output_index)
+        r.predicted_label = numpy_output
 
-        r.bathrooom_cat_score = numpy_outputs[CatsDataset.class_name_to_index('bathroom-cat')]
-        r.captain_score = numpy_outputs[CatsDataset.class_name_to_index('captain')]
-        r.control_score = numpy_outputs[CatsDataset.class_name_to_index('control')]
+        r.bathrooom_cat_score = 0
+        r.captain_score = numpy_output
+        r.control_score = 1 - numpy_output
 
-        softmax_outputs = F.softmax(outputs_set, dim=1)
-        softmax_numpy_outputs = softmax_outputs.flatten().cpu().numpy()
-
-        r.bathrooom_cat_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('bathroom-cat')] * 100
-        r.captain_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('captain')] * 100
-        r.control_percent = softmax_numpy_outputs[CatsDataset.class_name_to_index('control')] * 100
+        r.bathrooom_cat_percent = 0
+        r.captain_percent = numpy_output * 100
+        r.control_percent = (1 - numpy_output) * 100
 
         return r
