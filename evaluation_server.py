@@ -25,7 +25,7 @@ from src.models.cat_evaluation_result import CatEvaluationResult
 # 🔧 CONFIG
 class EvaluationServerConfig():
     def __init__(self):
-        self.saved_model_path = "trained_networks/cat_discriminator.pth"
+        self.saved_model_path = "trained_networks/experiment-binary-classifier-with-synthetic-data.pth"
         self.uncertain_image_directory = os.getcwd() + "\\data\\uncertain-images"
         self.is_confident_threshold = 70
         self.image_size=512
@@ -91,12 +91,12 @@ class EvaluationServer(BaseHTTPRequestHandler):
 
         self.send_evaluation_result(evaluation_result)
         
-        if(self.is_confident(evaluation_result)):
-            self.delete_file(image_path)
+        #if(self.is_confident(evaluation_result)):
+        #    self.delete_file(image_path)
 
         print(f"Request took {time.time() - start_time} seconds")
 
-    def send_evaluation_result(self, evaluation_result):
+    def send_evaluation_result(self, evaluation_result: CatEvaluationResult):
         result_json = evaluation_result.to_json()
         self.send_response(200)
         self.send_header("Content-type", "application/json")

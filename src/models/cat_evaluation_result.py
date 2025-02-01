@@ -18,7 +18,7 @@ class CatEvaluationResult:
     def to_json(self) -> str:
         return json.dumps({
             'actual_label': self.actual_label,
-            'predicted_label': self.predicted_label,
+            'predicted_label': float(self.predicted_label),
 
             'captain_score': float(self.captain_score),
             'control_score': float(self.control_score),
